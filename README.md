@@ -1,4 +1,4 @@
-# Downloads Organizer (for Windows)
+# Downloads Cleaner (for Windows)
 ![The Tool's UI on Windows](https://github.com/user-attachments/assets/e3fa68ce-2642-4cc1-9de1-77d6a0a8ce47)
 
 This code allows the user to clean up their folder. The tool groups file types in folders (eg. "Videos", "Documents",...). 
