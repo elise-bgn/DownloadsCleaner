@@ -75,23 +75,38 @@ class DownloadsCleaner:
             print(message)
 
     def file_has_expired(self, file_path):
-        """Checks if the file hasn't been accessed within the threshold."""
+        """Checks if the file hasn't been modified within the threshold."""
         try:
-            last_access_time = os.path.getatime(file_path)
-            last_access_date = time.strftime("%B %d, %Y", time.localtime(last_access_time))
-            current_time = time.time()
+            # Use the last modified time instead of access time
+            last_modified_time = os.path.getmtime(file_path)  # Get the last modification time
+            current_time = time.time()  # Current time in seconds since the epoch
             threshold_seconds = self.months_threshold.get() * 30 * 24 * 60 * 60  # Convert months to seconds
-            return (current_time - last_access_time) >= threshold_seconds, last_access_date
+
+            # Log for debugging purposes
+            print(f"File: {file_path}")
+            print(f"Last modified time: {last_modified_time}")
+            print(f"Current time: {current_time}")
+            print(f"Threshold in seconds: {threshold_seconds}")
+
+            # Determine if the file is expired
+            expired = (current_time - last_modified_time) >= threshold_seconds
+
+            # Format the last modified date for display
+            last_modified_date = time.strftime("%B %d, %Y", time.localtime(last_modified_time))
+
+            print(f"Expired: {expired}, Last modified date: {last_modified_date}")
+
+            return expired, last_modified_date
         except Exception as e:
-            print(f"Error checking file access time: {e}")
+            print(f"Error checking file modification time: {e}")
             return False, "Unknown"
 
     def show_popup(self, file_path, last_access_date):
-        """Shows a pop-up window with the file name and last accessed date."""
+        """Shows a pop-up window with the file name and last modification date."""
         file_name = os.path.basename(file_path)
         result = messagebox.askyesno(
             "Inactive File Detected",
-            f"📁 **{file_name}**\n\nLast accessed on: {last_access_date}\n\nWould you like to DELETE it?\n(It will go to the Recycle Bin)."
+            f"📁 **{file_name}**\n\nLast modified on: {last_access_date}\n\nWould you like to DELETE it?\n(It will go to the Recycle Bin)."
         )
 
         if result:
@@ -160,8 +175,10 @@ class DownloadsCleaner:
                         if expired:
                             keep_file = self.show_popup(file_path, last_access_date)
                             if not keep_file:
-                                continue  # Skip moving if deleted
+                                # Skip moving if deleted
+                                continue  # The file is deleted, so we do not move it
 
+                        # If file is not deleted, proceed with moving
                         self.move_file(file_path, scan_path)
 
             self.log_action("=== File Organization Completed ===\n")
@@ -169,6 +186,7 @@ class DownloadsCleaner:
 
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
+
 
 # === RUN THE PROGRAM ===
 if __name__ == "__main__":
