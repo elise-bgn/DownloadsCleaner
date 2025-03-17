@@ -96,8 +96,20 @@ class DownloadsCleaner:
 
         if result:
             self.log_action(f"Deleted: {file_path}")
+
+            # Strip any unwanted prefixes (like '\\?\\' in case of long paths) before sending to trash
+            file_path = file_path.replace(r'\\?\\', '')  # Remove any '\\?\\' prefix if it exists
+
+            # Debugging line: print the corrected path
+            print(f"Attempting to delete file: {file_path}")
+
             if not self.test_mode.get():
-                send2trash(file_path)
+                try:
+                    send2trash(file_path)
+                except Exception as e:
+                    self.log_action(f"Error deleting file {file_path}: {e}")
+                    messagebox.showerror("Error", f"Failed to delete file: {file_path}")
+
             return False  # File deleted
         else:
             self.log_action(f"Kept: {file_path}")

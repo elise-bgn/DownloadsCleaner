@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cadb808e-e1e9-4698-ba2c-6318ce8a5824" name="Changes" comment="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)">
+    <list default="true" id="cadb808e-e1e9-4698-ba2c-6318ce8a5824" name="Changes" comment="Made it 1 class again, fixed log directory, added user input for time threshold">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/downloadsCleaner.py" beforeDir="false" afterPath="$PROJECT_DIR$/downloadsCleaner.py" afterDir="false" />
     </list>
@@ -100,7 +100,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742225194809</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Made it 1 class again, fixed log directory, added user input for time threshold">
+      <option name="closed" value="true" />
+      <created>1742226094465</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1742226094465</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -108,6 +116,7 @@
     <MESSAGE value="added UI for file deletion" />
     <MESSAGE value="added logs &amp; made the tool a class" />
     <MESSAGE value="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)" />
-    <option name="LAST_COMMIT_MESSAGE" value="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)" />
+    <MESSAGE value="Made it 1 class again, fixed log directory, added user input for time threshold" />
+    <option name="LAST_COMMIT_MESSAGE" value="Made it 1 class again, fixed log directory, added user input for time threshold" />
   </component>
 </project>
