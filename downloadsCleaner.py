@@ -1,4 +1,4 @@
-# Elise Bourgoignie
+#Elise Bourgoignie
 import os
 import shutil
 import time
@@ -15,9 +15,8 @@ class DownloadsCleaner:
         # === Default Settings ===
         self.user = os.getenv("USERNAME")
         self.downloads_path = os.path.join(Path.home(), "Downloads")  # Default directory
-        self.test_mode = tk.BooleanVar(value=True)  # Default: Test Mode ON
+        self.test_mode = tk.BooleanVar(value=False)  # Default: Test Mode OFF
         self.months_threshold = tk.IntVar(value=3)  # Default: 3 months
-        self.log_file = self.create_log_file_path(self.downloads_path)  # Default log path based on initial directory
 
         # === File Type Categories ===
         self.folder_mapping = {
@@ -50,7 +49,8 @@ class DownloadsCleaner:
         self.test_checkbox.grid(row=2, column=0, columnspan=2, sticky="w")
 
         # Scan Button
-        tk.Button(self.root, text="Scan & Organize", command=self.organize_downloads, bg="green", fg="white").grid(row=3, column=0, columnspan=3, pady=10)
+        tk.Button(self.root, text="Scan & Organize", command=self.organize_downloads, bg="green", fg="white").grid(
+            row=3, column=0, columnspan=3, pady=10)
 
     def browse_directory(self):
         """Allows the user to choose a directory to scan."""
@@ -59,16 +59,23 @@ class DownloadsCleaner:
             self.dir_entry.delete(0, tk.END)
             self.dir_entry.insert(0, folder_selected)
 
-    def create_log_file_path(self, directory):
-        """Creates a unique log file path with a timestamp in the name."""
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")  # Format the current timestamp
-        return os.path.join(directory, f"download_organizer_log_{timestamp}.txt")
-
     def log_action(self, message):
-        """Logs actions to the file or prints them in test mode."""
+        """Logs actions to the log file or prints them in test mode."""
         if self.test_mode.get():
             print(f"[TEST MODE] {message}")
         else:
+            # Use the directory chosen by the user
+            log_directory = self.dir_entry.get()
+
+            # Ensure the log file path is set up only once per session
+            if not hasattr(self, 'log_file'):
+                timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+                self.log_file = os.path.join(log_directory, f"download_organizer_log_{timestamp}.txt")
+                # Create the log file for the first time, and write the header
+                with open(self.log_file, "w", encoding="utf-8") as log:
+                    log.write(f"=== Log started at {time.strftime('%Y-%m-%d %H:%M:%S')} ===\n")
+
+            # Append the log message to the log file
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             with open(self.log_file, "a", encoding="utf-8") as log:
                 log.write(f"[{timestamp}] {message}\n")
@@ -77,61 +84,48 @@ class DownloadsCleaner:
     def file_has_expired(self, file_path):
         """Checks if the file hasn't been modified within the threshold."""
         try:
-            # Use the last modified time instead of access time
             last_modified_time = os.path.getmtime(file_path)  # Get the last modification time
             current_time = time.time()  # Current time in seconds since the epoch
             threshold_seconds = self.months_threshold.get() * 30 * 24 * 60 * 60  # Convert months to seconds
 
-            # Log for debugging purposes
-            print(f"File: {file_path}")
-            print(f"Last modified time: {last_modified_time}")
-            print(f"Current time: {current_time}")
-            print(f"Threshold in seconds: {threshold_seconds}")
+            expired = (current_time - last_modified_time) >= threshold_seconds  # Check if the file is expired
 
-            # Determine if the file is expired
-            expired = (current_time - last_modified_time) >= threshold_seconds
-
-            # Format the last modified date for display
-            last_modified_date = time.strftime("%B %d, %Y", time.localtime(last_modified_time))
-
-            print(f"Expired: {expired}, Last modified date: {last_modified_date}")
-
+            last_modified_date = time.strftime("%B %d, %Y",
+                                               time.localtime(last_modified_time))  # Format the last modified date
             return expired, last_modified_date
         except Exception as e:
             print(f"Error checking file modification time: {e}")
             return False, "Unknown"
 
     def show_popup(self, file_path, last_access_date):
-        """Shows a pop-up window with the file name and last modification date."""
+        """Shows a pop-up window with the file name and last accessed date."""
         file_name = os.path.basename(file_path)
         result = messagebox.askyesno(
             "Inactive File Detected",
-            f"📁 **{file_name}**\n\nLast modified on: {last_access_date}\n\nWould you like to DELETE it?\n(It will go to the Recycle Bin)."
+            f"📁 **{file_name}**\n\nLast accessed on: {last_access_date}\n\nWould you like to DELETE it?\n(It will go to the Recycle Bin)."
         )
 
         if result:
             self.log_action(f"Deleted: {file_path}")
-
-            # Strip any unwanted prefixes (like '\\?\\' in case of long paths) before sending to trash
-            file_path = file_path.replace(r'\\?\\', '')  # Remove any '\\?\\' prefix if it exists
-
-            # Debugging line: print the corrected path
-            print(f"Attempting to delete file: {file_path}")
-
             if not self.test_mode.get():
                 try:
-                    send2trash(file_path)
+                    # Ensure the path is normalized before sending to trash
+                    normalized_path = os.path.normpath(file_path)
+                    send2trash(normalized_path)
                 except Exception as e:
-                    self.log_action(f"Error deleting file {file_path}: {e}")
-                    messagebox.showerror("Error", f"Failed to delete file: {file_path}")
-
+                    self.log_action(f"Error deleting file: {e}")
             return False  # File deleted
         else:
             self.log_action(f"Kept: {file_path}")
             return True  # File kept
 
     def move_file(self, file_path, destination_base):
-        """Moves a file to the appropriate folder."""
+        """Moves a file to the appropriate folder, but skips log files."""
+        # Skip log files (those that start with 'download_organizer_log_')
+        if os.path.basename(file_path).startswith("download_organizer_log_"):
+            self.log_action(f"Skipped moving log file: {file_path}")
+            return  # Skip moving log files
+
         file_ext = os.path.splitext(file_path)[1].lower()
         dest_folder = None
 
@@ -150,7 +144,12 @@ class DownloadsCleaner:
         self.log_action(f"Moved: {file_path} → {dest_path}")
 
         if not self.test_mode.get():
-            shutil.move(file_path, dest_path)
+            try:
+                # Normalize path before moving
+                normalized_dest_path = os.path.normpath(dest_path)
+                shutil.move(file_path, normalized_dest_path)
+            except Exception as e:
+                self.log_action(f"Error moving file: {e}")
 
     def organize_downloads(self):
         """Scans the selected directory, checks file activity, and organizes files."""
@@ -160,12 +159,10 @@ class DownloadsCleaner:
             self.log_action(f"ERROR: Directory '{scan_path}' not found.")
             return
 
-        # Update the log file location based on the new directory
-        self.log_file = self.create_log_file_path(scan_path)
-
         try:
             self.log_action("\n=== File Organization Started ===")
 
+            # Now start logging into the same file for the entire scan
             with os.scandir(scan_path) as entries:
                 for entry in entries:
                     if entry.is_file():
@@ -175,10 +172,8 @@ class DownloadsCleaner:
                         if expired:
                             keep_file = self.show_popup(file_path, last_access_date)
                             if not keep_file:
-                                # Skip moving if deleted
-                                continue  # The file is deleted, so we do not move it
+                                continue  # Skip moving if deleted
 
-                        # If file is not deleted, proceed with moving
                         self.move_file(file_path, scan_path)
 
             self.log_action("=== File Organization Completed ===\n")

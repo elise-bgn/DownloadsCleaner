@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cadb808e-e1e9-4698-ba2c-6318ce8a5824" name="Changes" comment="Debugged directory passing for file deletion">
+    <list default="true" id="cadb808e-e1e9-4698-ba2c-6318ce8a5824" name="Changes" comment="Fixed file expiration">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/downloadsCleaner.py" beforeDir="false" afterPath="$PROJECT_DIR$/downloadsCleaner.py" afterDir="false" />
     </list>
@@ -116,7 +116,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742227800228</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Fixed file expiration">
+      <option name="closed" value="true" />
+      <created>1742229175306</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1742229175306</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -126,6 +134,7 @@
     <MESSAGE value="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)" />
     <MESSAGE value="Made it 1 class again, fixed log directory, added user input for time threshold" />
     <MESSAGE value="Debugged directory passing for file deletion" />
-    <option name="LAST_COMMIT_MESSAGE" value="Debugged directory passing for file deletion" />
+    <MESSAGE value="Fixed file expiration" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed file expiration" />
   </component>
 </project>
