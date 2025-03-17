@@ -1,116 +1,120 @@
 # Elise Bourgoignie
-"""
-Downloads Cleaner Script with GUI
----------------------------------
-This Python script organizes files in a user-selected directory by categorizing them into
-folders (Images, Music, Videos, Documents, and Others). It also detects inactive files
-and prompts the user for deletion.
-
-Features:
-- Select any folder to scan (default: Downloads)
-- Categorizes files into specific folders
-- Detects old/inactive files and prompts user for deletion
-- Logs all actions in a GUI window
-- Test mode available (to simulate actions without making changes)
-"""
-
 import os
 import shutil
 import time
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext
+from tkinter import messagebox, filedialog
 from send2trash import send2trash
 
 class DownloadsCleaner:
-    """A class to scan and organize a selected directory by categorizing and managing files."""
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Downloads Organizer")
 
-    def __init__(self, directory, test_mode=True):
-        """Initialize with the selected directory and test mode setting."""
-        self.test_mode = test_mode
-        self.directory = directory
+        # === Default Settings ===
+        self.user = os.getenv("USERNAME")
+        self.downloads_path = os.path.join(Path.home(), "Downloads")  # Default directory
+        self.test_mode = tk.BooleanVar(value=True)  # Default: Test Mode ON
+        self.months_threshold = tk.IntVar(value=3)  # Default: 3 months
+        self.log_file = self.create_log_file_path(self.downloads_path)  # Default log path based on initial directory
 
-        # Log file path (inside selected directory)
-        self.log_file = os.path.join(self.directory, "download_organizer_log.txt")
-
-        # Time threshold for inactive files (in months)
-        self.months_threshold = 3
-        self.seconds_threshold = self.months_threshold * 30 * 24 * 60 * 60  # Convert to seconds
-
-        # File categories
-        self.image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'}
-        self.music_extensions = {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a'}
-        self.video_extensions = {'.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm'}
-        self.document_extensions = {'.pdf', '.docx', '.xlsx', '.pptx', '.txt'}
-
-        # Mapping file types to folders
+        # === File Type Categories ===
         self.folder_mapping = {
-            "Images": self.image_extensions,
-            "Music": self.music_extensions,
-            "Videos": self.video_extensions,
-            "Documents": self.document_extensions,
+            "Images": {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'},
+            "Music": {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a'},
+            "Videos": {'.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm'},
+            "Documents": {'.pdf', '.docx', '.xlsx', '.pptx', '.txt'},
             "Others": set()  # Catch-all
         }
 
-        # UI reference (will be set in the GUI)
-        self.log_widget = None
+        # === UI Elements ===
+        self.create_ui()
+
+    def create_ui(self):
+        """Creates the UI elements."""
+        # Directory selection
+        tk.Label(self.root, text="Select Folder to Scan:").grid(row=0, column=0, sticky="w")
+        self.dir_entry = tk.Entry(self.root, width=50)
+        self.dir_entry.grid(row=0, column=1, padx=5)
+        self.dir_entry.insert(0, self.downloads_path)  # Default path
+        tk.Button(self.root, text="Browse", command=self.browse_directory).grid(row=0, column=2)
+
+        # Months Threshold
+        tk.Label(self.root, text="Delete files older than (months):").grid(row=1, column=0, sticky="w")
+        self.months_entry = tk.Entry(self.root, width=5, textvariable=self.months_threshold)
+        self.months_entry.grid(row=1, column=1, sticky="w")
+
+        # Test Mode Checkbox
+        self.test_checkbox = tk.Checkbutton(self.root, text="Enable Test Mode", variable=self.test_mode)
+        self.test_checkbox.grid(row=2, column=0, columnspan=2, sticky="w")
+
+        # Scan Button
+        tk.Button(self.root, text="Scan & Organize", command=self.organize_downloads, bg="green", fg="white").grid(row=3, column=0, columnspan=3, pady=10)
+
+    def browse_directory(self):
+        """Allows the user to choose a directory to scan."""
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.dir_entry.delete(0, tk.END)
+            self.dir_entry.insert(0, folder_selected)
+
+    def create_log_file_path(self, directory):
+        """Creates a unique log file path with a timestamp in the name."""
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")  # Format the current timestamp
+        return os.path.join(directory, f"download_organizer_log_{timestamp}.txt")
 
     def log_action(self, message):
-        """Log an action to the log file and update the UI log box."""
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        log_entry = f"[{timestamp}] {message}\n"
-
-        if self.test_mode:
+        """Logs actions to the file or prints them in test mode."""
+        if self.test_mode.get():
             print(f"[TEST MODE] {message}")
         else:
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             with open(self.log_file, "a", encoding="utf-8") as log:
-                log.write(log_entry)
+                log.write(f"[{timestamp}] {message}\n")
             print(message)
 
-        # Update log box in the UI if available
-        if self.log_widget:
-            self.log_widget.insert(tk.END, log_entry)
-            self.log_widget.see(tk.END)  # Auto-scroll to the bottom
-
     def file_has_expired(self, file_path):
-        """Check if a file hasn't been accessed within the threshold."""
-        last_access_time = os.path.getatime(file_path)
-        current_time = time.time()
-        return (current_time - last_access_time) >= self.seconds_threshold
+        """Checks if the file hasn't been accessed within the threshold."""
+        try:
+            last_access_time = os.path.getatime(file_path)
+            last_access_date = time.strftime("%B %d, %Y", time.localtime(last_access_time))
+            current_time = time.time()
+            threshold_seconds = self.months_threshold.get() * 30 * 24 * 60 * 60  # Convert months to seconds
+            return (current_time - last_access_time) >= threshold_seconds, last_access_date
+        except Exception as e:
+            print(f"Error checking file access time: {e}")
+            return False, "Unknown"
 
-    def show_popup(self, file_path):
-        """Prompt the user to decide whether to delete an old file."""
+    def show_popup(self, file_path, last_access_date):
+        """Shows a pop-up window with the file name and last accessed date."""
         file_name = os.path.basename(file_path)
-        root = tk.Tk()
-        root.withdraw()
-
         result = messagebox.askyesno(
             "Inactive File Detected",
-            f"Hey! The file '{file_name}' hasn't been opened in {self.months_threshold} months.\n\n"
-            "Would you like to DELETE it? (It will go to the Recycle Bin)."
+            f"📁 **{file_name}**\n\nLast accessed on: {last_access_date}\n\nWould you like to DELETE it?\n(It will go to the Recycle Bin)."
         )
 
         if result:
             self.log_action(f"Deleted: {file_path}")
-            if not self.test_mode:
+            if not self.test_mode.get():
                 send2trash(file_path)
             return False  # File deleted
         else:
             self.log_action(f"Kept: {file_path}")
             return True  # File kept
 
-    def move_file(self, file_path):
-        """Move the file to its designated folder."""
+    def move_file(self, file_path, destination_base):
+        """Moves a file to the appropriate folder."""
         file_ext = os.path.splitext(file_path)[1].lower()
         dest_folder = None
 
         for folder, extensions in self.folder_mapping.items():
             if file_ext in extensions:
-                dest_folder = os.path.join(self.directory, f"Downloaded {folder}")
+                dest_folder = os.path.join(destination_base, f"Downloaded {folder}")
                 break
 
         if not dest_folder:
-            dest_folder = os.path.join(self.directory, "Downloaded Others")
+            dest_folder = os.path.join(destination_base, "Downloaded Others")
 
         if not os.path.exists(dest_folder):
             os.makedirs(dest_folder)
@@ -118,79 +122,44 @@ class DownloadsCleaner:
         dest_path = os.path.join(dest_folder, os.path.basename(file_path))
         self.log_action(f"Moved: {file_path} → {dest_path}")
 
-        if not self.test_mode:
+        if not self.test_mode.get():
             shutil.move(file_path, dest_path)
 
     def organize_downloads(self):
-        """Scan the directory and process files."""
-        if not os.path.exists(self.directory):
-            self.log_action(f"ERROR: Directory '{self.directory}' not found.")
+        """Scans the selected directory, checks file activity, and organizes files."""
+        scan_path = self.dir_entry.get()
+
+        if not os.path.exists(scan_path):
+            self.log_action(f"ERROR: Directory '{scan_path}' not found.")
             return
 
-        self.log_action("\n=== File Organization Started ===")
+        # Update the log file location based on the new directory
+        self.log_file = self.create_log_file_path(scan_path)
 
-        with os.scandir(self.directory) as entries:
-            for entry in entries:
-                if entry.is_file():
-                    file_path = os.path.join(self.directory, entry.name)
+        try:
+            self.log_action("\n=== File Organization Started ===")
 
-                    if self.file_has_expired(file_path):
-                        keep_file = self.show_popup(file_path)
-                        if not keep_file:
-                            continue
+            with os.scandir(scan_path) as entries:
+                for entry in entries:
+                    if entry.is_file():
+                        file_path = os.path.join(scan_path, entry.name)
 
-                    self.move_file(file_path)
+                        expired, last_access_date = self.file_has_expired(file_path)
+                        if expired:
+                            keep_file = self.show_popup(file_path, last_access_date)
+                            if not keep_file:
+                                continue  # Skip moving if deleted
 
-        self.log_action("=== File Organization Completed ===\n")
+                        self.move_file(file_path, scan_path)
 
+            self.log_action("=== File Organization Completed ===\n")
+            messagebox.showinfo("Process Complete", "File organization has finished successfully.")
 
-class CleanerApp:
-    """GUI Application for the Downloads Cleaner."""
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
 
-    def __init__(self, root):
-        """Initialize the GUI."""
-        self.root = root
-        self.root.title("Downloads Cleaner")
-        self.root.geometry("500x400")
-
-        # Folder Selection
-        self.selected_folder = tk.StringVar()
-        self.selected_folder.set(str(Path.home() / "Downloads"))
-
-        tk.Label(root, text="Select Folder to Scan:").pack(pady=5)
-        tk.Entry(root, textvariable=self.selected_folder, width=50).pack(pady=5)
-        tk.Button(root, text="Browse", command=self.browse_folder).pack(pady=5)
-
-        # Test Mode Toggle
-        self.test_mode_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(root, text="Enable Test Mode", variable=self.test_mode_var).pack(pady=5)
-
-        # Scan Button
-        tk.Button(root, text="Scan & Organize", command=self.start_scan).pack(pady=10)
-
-        # Log Display
-        tk.Label(root, text="Log Output:").pack(pady=5)
-        self.log_text = scrolledtext.ScrolledText(root, height=10, width=60)
-        self.log_text.pack(pady=5)
-
-    def browse_folder(self):
-        """Open a dialog for the user to select a folder."""
-        folder_selected = filedialog.askdirectory()
-        if folder_selected:
-            self.selected_folder.set(folder_selected)
-
-    def start_scan(self):
-        """Start the scan process."""
-        selected_dir = self.selected_folder.get()
-        test_mode = self.test_mode_var.get()
-
-        cleaner = DownloadsCleaner(selected_dir, test_mode)
-        cleaner.log_widget = self.log_text  # Connect UI log box
-        cleaner.organize_downloads()
-
-
-# === MAIN EXECUTION ===
+# === RUN THE PROGRAM ===
 if __name__ == "__main__":
     root = tk.Tk()
-    app = CleanerApp(root)
+    app = DownloadsCleaner(root)
     root.mainloop()

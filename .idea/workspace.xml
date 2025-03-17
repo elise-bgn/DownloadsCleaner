@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cadb808e-e1e9-4698-ba2c-6318ce8a5824" name="Changes" comment="added logs &amp; made the tool a class">
+    <list default="true" id="cadb808e-e1e9-4698-ba2c-6318ce8a5824" name="Changes" comment="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/downloadsCleaner.py" beforeDir="false" afterPath="$PROJECT_DIR$/downloadsCleaner.py" afterDir="false" />
     </list>
@@ -92,13 +92,22 @@
       <option name="project" value="LOCAL" />
       <updated>1742224338152</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)">
+      <option name="closed" value="true" />
+      <created>1742225194809</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1742225194809</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit" />
     <MESSAGE value="added UI for file deletion" />
     <MESSAGE value="added logs &amp; made the tool a class" />
-    <option name="LAST_COMMIT_MESSAGE" value="added logs &amp; made the tool a class" />
+    <MESSAGE value="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)" />
+    <option name="LAST_COMMIT_MESSAGE" value="split up code into UI (CleanerApp) and functionality (DownloadsCleaner)" />
   </component>
 </project>
