@@ -7,3 +7,5 @@ since 3 months ago. You can then choose to delete it (goes to recycle bin) or ke
 
 After each scan a log is created that shows you where each file went,
 this way you won't lose your files if something goes wrong.
+
+You can watch the demo [here](https://youtu.be/uVvf4qtbGjw)
